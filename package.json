@@ -1,9 +1,17 @@
 {
   "name": "@evansendra/pi-profiles",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Manage isolated Pi profiles and preview or sync their settings",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/evansendra/pi-profiles.git"
+  },
+  "homepage": "https://github.com/evansendra/pi-profiles#readme",
+  "bugs": {
+    "url": "https://github.com/evansendra/pi-profiles/issues"
+  },
   "engines": {
     "node": ">=22.19.0"
   },
