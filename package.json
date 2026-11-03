@@ -1,6 +1,6 @@
 {
   "name": "@evansendra/pi-profiles",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Manage isolated Pi profiles and preview or sync their settings",
   "type": "module",
   "license": "MIT",
@@ -22,9 +22,13 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "keywords": ["pi-package"],
+  "keywords": [
+    "pi-package"
+  ],
   "pi": {
-    "extensions": ["./extensions/profile.ts"]
+    "extensions": [
+      "./extensions/profile.ts"
+    ]
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
