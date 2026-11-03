@@ -1,0 +1,5 @@
+node_modules/
+*.tgz
+.DS_Store
+# Personal registry belongs at ~/.pi/profiles.json, never in this repo.
+profiles.json

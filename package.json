@@ -1,0 +1,32 @@
+{
+  "name": "@evansendra/pi-profiles",
+  "version": "0.1.0",
+  "description": "Manage isolated Pi profiles and preview or sync their settings",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "files": [
+    "extensions/",
+    "lib/",
+    "README.md",
+    "LICENSE",
+    "profiles.example.json"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": ["pi-package"],
+  "pi": {
+    "extensions": ["./extensions/profile.ts"]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}

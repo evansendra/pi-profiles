@@ -1,0 +1,6 @@
+{
+  "profiles": {
+    "main": "~/.pi/agent",
+    "work": "~/.pi-work"
+  }
+}

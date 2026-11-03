@@ -1,0 +1,50 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createProfiles, launchCommand } from '../lib/profiles.mjs';
+
+test('profile lifecycle, sync preview, isolation and deletion guards', () => {
+  const home = mkdtempSync(join(tmpdir(), 'pi-profiles-test-'));
+  try {
+    const main = join(home, '.pi/agent');
+    const work = join(home, '.pi-work');
+    mkdirSync(main, { recursive: true });
+    mkdirSync(work);
+    writeFileSync(join(home, '.pi/profiles.json'), JSON.stringify({ profiles: { work: '~/.pi-work' } }));
+    const service = createProfiles(home, work, home);
+    assert.equal(service.list()[0].name, 'work');
+    assert.equal(service.list()[0].current, true);
+    assert.equal(service.create('main').created, false);
+    const fresh = service.create('my_profile');
+    assert.equal(fresh.directory, join(home, '.pi/profiles/my_profile'));
+    assert.equal(realpathSync(join(fresh.directory, 'extensions/pi-profiles')), realpathSync(home));
+    assert.equal(service.create('my_profile').created, false);
+    assert.equal(service.find('missing'), undefined);
+    assert.equal(service.find('work').directory, work);
+    assert.equal(service.find('main').directory, main);
+    assert.throws(() => service.create('../escape'));
+    writeFileSync(join(main, 'settings.json'), JSON.stringify({ theme: 'system', custom: { a: 1 }, deviceId: 'source', sessionDir: '/source' }));
+    const dest = join(fresh.directory, 'settings.json');
+    writeFileSync(dest, JSON.stringify({ obsolete: true, deviceId: 'target', sessionDir: '/target' }));
+    writeFileSync(join(fresh.directory, 'auth.json'), 'untouched');
+    const before = readFileSync(dest, 'utf8');
+    const preview = service.sync(service.find('main'), fresh, true);
+    assert.match(preview, /"custom"/);
+    assert.match(preview, /obsolete/);
+    assert.equal(readFileSync(dest, 'utf8'), before);
+    service.sync(service.find('main'), fresh, false);
+    assert.deepEqual(JSON.parse(readFileSync(dest, 'utf8')), { theme: 'system', custom: { a: 1 }, deviceId: 'target', sessionDir: '/target' });
+    assert.equal(readFileSync(join(fresh.directory, 'auth.json'), 'utf8'), 'untouched');
+    assert.throws(() => service.remove(service.find('main')), /main/);
+    assert.throws(() => service.remove(service.find('work')), /active/);
+    assert.throws(() => service.sync(fresh, fresh, false), /different/);
+    service.remove(fresh);
+    assert.equal(existsSync(fresh.directory), false);
+    assert.match(launchCommand("/tmp/it's here"), /'\\''/);
+    const custom = createProfiles(home, join(home, 'other-config'), home);
+    assert.equal(custom.list()[0].name, 'current');
+    assert.equal(custom.list()[0].current, true);
+  } finally { rmSync(home, { recursive: true, force: true }); }
+});
