@@ -1,6 +1,6 @@
 {
   "name": "@evansendra/pi-profiles",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Manage isolated Pi profiles and preview or sync their settings",
   "type": "module",
   "license": "MIT",
@@ -19,6 +19,7 @@
     "extensions/",
     "lib/",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE",
     "profiles.example.json"
   ],
@@ -37,6 +38,9 @@
     "extensions": [
       "./extensions/profile.ts"
     ]
+  },
+  "devDependencies": {
+    "jiti": "2.7.0"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"

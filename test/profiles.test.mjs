@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createProfiles, launchCommand } from '../lib/profiles.mjs';
+import { createProfiles, launchCommand } from '../lib/profiles.ts';
 
 test('profile lifecycle, sync preview, isolation and deletion guards', () => {
   const home = mkdtempSync(join(tmpdir(), 'pi-profiles-test-'));

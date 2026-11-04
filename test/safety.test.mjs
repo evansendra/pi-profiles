@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, symlinkSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createProfiles } from '../lib/profiles.mjs';
+import { createProfiles } from '../lib/profiles.ts';
 
 function fixture(callback) {
   const home = mkdtempSync(join(tmpdir(), 'pi-profiles-safety-'));
