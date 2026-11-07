@@ -1,4 +1,4 @@
-import { lstatSync, readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { lstatSync, statSync, readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { TextDecoder } from 'node:util';
 
@@ -157,6 +157,11 @@ export function importBundle(service, value, name) {
     throw error;
   }
   return entry;
+}
+
+export function defaultExportDirectory(home, cwd) {
+  const downloads = join(home, 'Downloads');
+  return statSync(downloads, { throwIfNoEntry: false })?.isDirectory() ? downloads : cwd;
 }
 
 export function parseExportArguments(args) {

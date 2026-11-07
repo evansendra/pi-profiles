@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, symlin
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createProfiles } from '../lib/profiles.ts';
-import { buildExport, importBundle, parseExportArguments, previewBundle, readBundle, restoreGuide, splitArguments, validateBundle, writeBundle } from '../lib/transfer.ts';
+import { buildExport, defaultExportDirectory, importBundle, parseExportArguments, previewBundle, readBundle, restoreGuide, splitArguments, validateBundle, writeBundle } from '../lib/transfer.ts';
 
 function fixture(callback) {
   const home = mkdtempSync(join(tmpdir(), 'pi-transfer-test-'));
@@ -20,6 +20,7 @@ function fixture(callback) {
     };
     save('settings.json', JSON.stringify({ theme: 'system/system', editorPaddingX: 1, deviceId: 'PRIVATE_DEVICE', sessionDir: '/PRIVATE_SESSION', httpProxy: 'PRIVATE_PROXY', shellCommandPrefix: 'PRIVATE_COMMAND', packages: ['npm:@example/tools@1.0.0', 'git:github.com/example/tools@v1', 'https://user:PRIVATE_PASSWORD@example.com/repo'], skills: ['/outside/skills'] }));
     save('auth.json', 'PRIVATE_AUTH');
+    save('keybindings.json', '{"tui.altScreen.top":"home"}');
     save('mcp.json', JSON.stringify({ mcpServers: { docs: { url: 'https://PRIVATE_ENDPOINT', headers: { Authorization: 'PRIVATE_BEARER' }, env: { API_KEY: 'PRIVATE_KEY' }, args: ['PRIVATE_ARGUMENT'] } } }));
     save('prompts/explain.md', 'Explain in plain language.');
     save('skills/example/SKILL.md', 'A local skill.');
@@ -60,6 +61,7 @@ test('round trip creates a new profile and never installs packages or copies aut
   assert.equal(readFileSync(join(imported.directory, 'prompts/explain.md'), 'utf8'), 'Explain in plain language.');
   assert.deepEqual(JSON.parse(readFileSync(join(imported.directory, 'settings.json'), 'utf8')), bundle.settings);
   assert.ok(!existsSync(join(imported.directory, 'auth.json')));
+  assert.ok(!existsSync(join(imported.directory, 'keybindings.json')));
   assert.ok(!existsSync(join(imported.directory, 'mcp.json')));
   assert.ok(!existsSync(join(imported.directory, 'node_modules')));
   assert.match(readFileSync(join(imported.directory, 'RESTORE.txt'), 'utf8'), /install 'npm:@example\/tools@1.0.0'/);
@@ -100,6 +102,21 @@ test('restoration guide contains only generated commands and supports quoted fil
   assert.ok(!guide.includes('PRIVATE_'));
   assert.deepEqual(splitArguments('import "/path with spaces/bundle.json" restored --dry-run'), ['import', '/path with spaces/bundle.json', 'restored', '--dry-run']);
   assert.throws(() => splitArguments('import "unfinished'), /Unclosed/);
+}));
+
+test('default export directory prefers Downloads and falls back when missing or not a directory', () => fixture(({ home }) => {
+  const cwd = join(home, 'work');
+  mkdirSync(cwd);
+  const downloads = join(home, 'Downloads');
+  assert.equal(defaultExportDirectory(home, cwd), cwd);
+  writeFileSync(downloads, 'not a directory');
+  assert.equal(defaultExportDirectory(home, cwd), cwd);
+  rmSync(downloads);
+  mkdirSync(downloads);
+  assert.equal(defaultExportDirectory(home, cwd), downloads);
+  rmSync(downloads, { recursive: true });
+  symlinkSync(cwd, downloads);
+  assert.equal(defaultExportDirectory(home, cwd), downloads);
 }));
 
 test('export path option supports either order, equals syntax, and positional compatibility', () => {

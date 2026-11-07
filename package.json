@@ -1,6 +1,6 @@
 {
   "name": "@evansendra/pi-profiles",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Manage isolated Pi profiles and preview or sync their settings",
   "type": "module",
   "license": "MIT",

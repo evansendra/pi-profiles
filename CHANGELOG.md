@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.1]
+
+### Fixed
+- Sync profile-local keybindings by default, including Home/End overrides. Replace the complete target file when present in the source; retain target bindings when absent. Dry-run previews changes, source symlinks are skipped, and destination conflicts fail before writes.
+
+### Added
+- Manual GitHub Actions publishing with npm provenance and verification against the locally reviewed tarball hash.
+
+### Changed
+- Default profile exports to `~/Downloads` when that directory exists, falling back to the working directory. Explicit destinations are unchanged.
+
 ## [0.2.0]
 
 ### Added

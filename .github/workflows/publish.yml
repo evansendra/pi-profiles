@@ -1,0 +1,59 @@
+name: Publish to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      tarball_sha256:
+        description: SHA-256 of the locally reviewed npm tarball
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Check release version
+        run: |
+          test "$GITHUB_REF_NAME" = "v$(node -p "require('./package.json').version")"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Install dependencies without lifecycle scripts
+        run: npm install --ignore-scripts --package-lock=false --legacy-peer-deps
+      - name: Test
+        run: npm run prepublishOnly
+      - name: Pack and verify reviewed payload
+        env:
+          EXPECTED_SHA256: ${{ inputs.tarball_sha256 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/package"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/package"
+          node --input-type=module <<'JS'
+          import { createHash } from 'node:crypto';
+          import { readFileSync, readdirSync } from 'node:fs';
+          import { join } from 'node:path';
+          const directory = join(process.env.RUNNER_TEMP, 'package');
+          const files = readdirSync(directory);
+          if (files.length !== 1 || !files[0].endsWith('.tgz')) throw new Error('Expected one tarball');
+          const actual = createHash('sha256').update(readFileSync(join(directory, files[0]))).digest('hex');
+          if (!/^[a-f0-9]{64}$/.test(process.env.EXPECTED_SHA256) || actual !== process.env.EXPECTED_SHA256) throw new Error('Tarball differs from reviewed payload');
+          JS
+          git diff --exit-code
+      - name: Publish with provenance using npm trusted publishing
+        run: npm publish "$RUNNER_TEMP/package/"*.tgz --access public --provenance --registry https://registry.npmjs.org/

@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createProfiles, launchCommand } from "../lib/profiles.ts";
-import { buildExport, importBundle, parseExportArguments, previewBundle, readBundle, restoreGuide, splitArguments, writeBundle } from "../lib/transfer.ts";
+import { buildExport, defaultExportDirectory, importBundle, parseExportArguments, previewBundle, readBundle, restoreGuide, splitArguments, writeBundle } from "../lib/transfer.ts";
 
 export default function (pi: ExtensionAPI) {
   const directory = resolve(getAgentDir());
@@ -77,7 +77,9 @@ export default function (pi: ExtensionAPI) {
           const entry = profiles.find(options.name);
           if (!entry) throw new Error(`Profile '${options.name}' doesn't exist.`);
           const bundle = buildExport(entry);
-          let output = localPath(options.output ?? `${entry.name}.pi-profile.json`, ctx.cwd);
+          let output = options.output === undefined
+            ? join(defaultExportDirectory(homedir(), ctx.cwd), `${entry.name}.pi-profile.json`)
+            : localPath(options.output, ctx.cwd);
           if (statSync(output, { throwIfNoEntry: false })?.isDirectory()) output = join(output, `${entry.name}.pi-profile.json`);
           const preview = previewBundle(bundle);
           ctx.ui.notify(`Destination: ${output}\n\n${preview}`, "info");

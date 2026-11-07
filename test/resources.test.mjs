@@ -48,6 +48,53 @@ test('local sync copies resources, overwrites matches, retains extras and skill 
   assert.equal(resolve(target, settings.packages[0]), resolve(source, '../../projects/plugin'));
 }));
 
+test('keybindings sync adds and replaces the entire file with a write-free preview', () => fixture(({ source, target, save, sync }) => {
+  const bindings = JSON.stringify({ 'tui.altScreen.top': 'home', 'tui.altScreen.bottom': 'end' });
+  save(source, 'keybindings.json', bindings);
+  assert.match(sync(true), /add keybindings\.json/);
+  assert.ok(!existsSync(join(target, 'keybindings.json')));
+  sync();
+  assert.equal(readFileSync(join(target, 'keybindings.json'), 'utf8'), bindings);
+  save(target, 'keybindings.json', '{"targetOnly":"ctrl+x"}');
+  assert.match(sync(true), /replace keybindings\.json/);
+  assert.equal(readFileSync(join(target, 'keybindings.json'), 'utf8'), '{"targetOnly":"ctrl+x"}');
+  sync();
+  assert.equal(readFileSync(join(target, 'keybindings.json'), 'utf8'), bindings);
+}));
+
+test('missing and symlinked source keybindings retain target bindings', () => fixture(({ home, source, target, save, sync }) => {
+  save(target, 'keybindings.json', '{}');
+  sync();
+  assert.equal(readFileSync(join(target, 'keybindings.json'), 'utf8'), '{}');
+  const outside = save(home, 'outside.json', '{"external":"ctrl+x"}');
+  symlinkSync(outside, join(source, 'keybindings.json'));
+  assert.match(sync(true), /Skipped resource paths[^\n]*keybindings\.json/);
+  sync();
+  assert.equal(readFileSync(join(target, 'keybindings.json'), 'utf8'), '{}');
+}));
+
+for (const kind of ['symlink', 'directory']) {
+  test(`keybindings destination ${kind} conflicts fail preflight without writes`, () => fixture(({ home, source, target, save, sync }) => {
+    save(source, 'keybindings.json', '{}');
+    save(source, 'prompts/example.md', 'unchanged');
+    const outside = save(home, 'outside.json', '{}');
+    if (kind === 'symlink') symlinkSync(outside, join(target, 'keybindings.json'));
+    else mkdirSync(join(target, 'keybindings.json'));
+    for (const dryRun of [true, false]) assert.throws(() => sync(dryRun), /destination conflict/);
+    assert.equal(readFileSync(join(target, 'settings.json'), 'utf8'), '{}');
+    assert.equal(readFileSync(outside, 'utf8'), '{}');
+    assert.ok(!existsSync(join(target, 'prompts')));
+  }));
+}
+
+test('source keybindings directory fails before copying resources', () => fixture(({ source, target, save, sync }) => {
+  save(source, 'prompts/example.md', 'unchanged');
+  mkdirSync(join(source, 'keybindings.json'));
+  assert.throws(() => sync(), /keybindings\.json must be a regular file/);
+  assert.equal(readFileSync(join(target, 'settings.json'), 'utf8'), '{}');
+  assert.ok(!existsSync(join(target, 'prompts')));
+}));
+
 test('source symlinks and dependency directories are skipped and reported', () => fixture(({ home, source, target, save, sync }) => {
   const external = save(home, 'external.md', 'do not copy');
   mkdirSync(join(source, 'prompts'));

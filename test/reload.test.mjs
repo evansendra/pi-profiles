@@ -17,6 +17,7 @@ test('same-process extension reload refreshes helper code and syncs resources wi
     writeFileSync(join(source, 'settings.json'), JSON.stringify({ packages: ['../../projects/plugin'] }));
     writeFileSync(join(target, 'settings.json'), '{}');
     writeFileSync(join(source, 'prompts/example.md'), 'Copy this prompt.');
+    writeFileSync(join(source, 'keybindings.json'), '{"tui.altScreen.top":"home","tui.altScreen.bottom":"end"}');
     writeFileSync(join(pkg, 'package.json'), '{"name":"test-profile-package","type":"module"}');
     writeFileSync(join(pkg, 'host.ts'), `export const getAgentDir = () => ${JSON.stringify(source)};`);
     for (const file of ['extensions/profile.ts', 'lib/profiles.ts', 'lib/resources.ts', 'lib/transfer.ts']) {
@@ -45,8 +46,9 @@ test('same-process extension reload refreshes helper code and syncs resources wi
     assert.match(message, /AFTER PI_CODING_AGENT_DIR/);
     assert.ok(!message.includes('BEFORE PI_CODING_AGENT_DIR'));
     await reloaded.handler('main work', ctx);
-    assert.match(message, /Synced settings and 1 resource files/);
+    assert.match(message, /Synced settings and 2 resource files/);
     assert.equal(readFileSync(join(target, 'prompts/example.md'), 'utf8'), 'Copy this prompt.');
+    assert.equal(readFileSync(join(target, 'keybindings.json'), 'utf8'), readFileSync(join(source, 'keybindings.json'), 'utf8'));
     const settings = JSON.parse(readFileSync(join(target, 'settings.json'), 'utf8'));
     assert.equal(resolve(target, settings.packages[0]), resolve(source, '../../projects/plugin'));
   } finally {

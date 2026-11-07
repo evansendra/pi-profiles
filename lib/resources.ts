@@ -41,6 +41,10 @@ export function planResources(source, target) {
     if (info && !info.isDirectory() && !info.isSymbolicLink()) throw new Error(`Resource root must be a directory: ${from}`);
     walk(root);
   }
+  const keybindings = join(source, 'keybindings.json');
+  const keybindingsInfo = stat(keybindings);
+  if (keybindingsInfo && !keybindingsInfo.isFile() && !keybindingsInfo.isSymbolicLink()) throw new Error('Source keybindings.json must be a regular file.');
+  walk('keybindings.json');
   return { files, directories, skipped };
 }
 
