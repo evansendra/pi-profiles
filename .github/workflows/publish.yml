@@ -52,12 +52,14 @@ jobs:
         run: npm install --ignore-scripts --package-lock=false --legacy-peer-deps
       - name: Test
         run: npm run prepublishOnly
-      - name: Pack and verify reviewed payload
+      - name: Download and verify reviewed payload
         env:
           EXPECTED_SHA256: ${{ inputs.tarball_sha256 }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p "$RUNNER_TEMP/package"
-          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/package"
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern 'evansendra-pi-profiles-*.tgz' --dir "$RUNNER_TEMP/package"
           node --input-type=module <<'JS'
           import { createHash } from 'node:crypto';
           import { readFileSync, readdirSync } from 'node:fs';
